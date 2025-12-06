@@ -1,3 +1,71 @@
+#!/usr/bin/env python 
+# -*- coding: utf-8 -*-
+
+"""S_C.py: Fast spatial correlation algorithm."""
+
+import numpy as np
+import math
+from scipy.spatial import Delaunay
+from scipy.cluster.hierarchy import linkage
+from disjoint_set import DisjointSet
+from typing import List, Tuple, Optional, Union
+import warnings
+
+def get_edges_from_linkage_matrix(linkage_Z: np.ndarray, n_node: int) -> Tuple[List, dict]:
+    """Turn the outputs of linkage function into a more usable merge order.
+    
+    Parameters
+    ----------
+    linkage_Z : np.ndarray
+        Output of scipy.cluster.hierarchy.linkage
+    n_node : int
+        Number of original nodes
+        
+    Returns
+    -------
+    edges : list
+        List of edges constituting the merge order
+    cluster_to_node : dict
+        Mapping from cluster IDs to original node IDs
+    """
+    cluster_to_node = {}
+    edges = []
+
+    for i_cluster, cluster in enumerate(linkage_Z):
+        if cluster[0] < n_node:
+            cluster_to_node[i_cluster + n_node] = int(cluster[0])
+        else:
+            cluster_to_node[i_cluster + n_node] = cluster_to_node[int(cluster[0])]
+
+        edges.append([
+            int(node) if node < n_node else cluster_to_node[node]
+            for node in cluster[:2]
+        ])
+
+    return edges, cluster_to_node
+
+
+def get_merge_order(coordinates: np.ndarray, method: str = "single") -> List[List[int]]:
+    """Compute merge order from coordinates and return list of edges.
+    
+    Parameters
+    ----------
+    coordinates : np.ndarray
+        Array of shape (n_points, n_dimensions) containing spatial coordinates
+    method : str, optional
+        Linkage method from ['single', 'median', 'average', 'complete']
+        Default is 'single' linkage
+        
+    Returns
+    -------
+    list
+        List of pairs of node IDs representing merge order
+    """
+    linkage_Z = linkage(coordinates, method=method)
+    merge_order_method = get_edges_from_linkage_matrix(linkage_Z, len(coordinates))[0]
+    return merge_order_method
+
+
 def get_space_corr(
     x: np.ndarray, y: np.ndarray, 
     merge_order: List[List[int]], 
