@@ -249,4 +249,6 @@ dependencies:
   - zipp=3.23.0=pyhcf101f3_1
   - zlib-ng=2.3.3=hceb46e0_1
   - zstd=1.5.7=hb78ec9c_6
+  - pip:
+      - spacecorr==0.1.0
 prefix: /home/aa/anaconda3/envs/spacecorr
